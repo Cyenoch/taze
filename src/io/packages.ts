@@ -58,20 +58,24 @@ export async function loadPackage(
   if (relative.endsWith('package.yaml'))
     return loadPackageYAML(relative, options, shouldUpdate)
 
-  // Check if this package.json contains Bun workspaces with catalogs
+  // Check if this package.json contains Bun catalogs (top-level or within workspaces)
   if (relative.endsWith('package.json')) {
     const filepath = resolve(options.cwd ?? '', relative)
     try {
       const packageJsonRaw = await readJSON(filepath)
       const workspaces = packageJsonRaw?.workspaces
 
+      // Check for top-level catalogs or workspaces catalogs
+      const hasTopLevelCatalog = packageJsonRaw?.catalog || packageJsonRaw?.catalogs
+      const hasWorkspacesCatalog = workspaces && (workspaces.catalog || workspaces.catalogs)
+
       // Only process Bun catalogs if we detect Bun is being used
-      if (workspaces && (workspaces.catalog || workspaces.catalogs)) {
+      if (hasTopLevelCatalog || hasWorkspacesCatalog) {
         const cwd = resolve(options.cwd || process.cwd())
         const hasBunLock = existsSync(join(cwd, 'bun.lockb')) || existsSync(join(cwd, 'bun.lock'))
 
         if (hasBunLock) {
-          const bunWorkspaces = await loadBunWorkspace(relative, options, shouldUpdate)
+          const bunWorkspaces = await loadBunWorkspace(relative, options, shouldUpdate, packageJsonRaw)
           const packageJson = await loadPackageJSON(relative, options, shouldUpdate)
           return [...bunWorkspaces, ...packageJson]
         }

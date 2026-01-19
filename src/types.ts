@@ -228,6 +228,7 @@ export interface PnpmWorkspaceMeta extends BasePackageMeta {
 export interface BunWorkspaceMeta extends BasePackageMeta {
   type: 'bun-workspace'
   raw: Record<string, any>
+  catalogLocation: 'top-level' | 'workspaces'
 }
 
 export interface YarnWorkspaceMeta extends BasePackageMeta {
